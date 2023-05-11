@@ -1,34 +1,43 @@
 package id.ac.unpas.modul3.screens
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.*
+import androidx.compose.material.Button
+import androidx.compose.material.ButtonDefaults
+import androidx.compose.material.OutlinedTextField
+import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.benasher44.uuid.uuid4
-import id.ac.unpas.modul3.model.SetoranSampah
-import id.ac.unpas.modul3.persistences.SetoranSampahDao
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
 import id.ac.unpas.modul3.ui.theme.Purple700
 import id.ac.unpas.modul3.ui.theme.Teal200
 import kotlinx.coroutines.launch
 
 @Composable
-fun FormPencatatanSampah(setoranSampahDao: SetoranSampahDao) {
+fun FormPencatatanSampahScreen(navController : NavHostController, id: String? = null, modifier: Modifier = Modifier) {
+    val viewModel = hiltViewModel<PengelolaanSampahViewModel>()
     val scope = rememberCoroutineScope()
     val tanggal = remember { mutableStateOf(TextFieldValue("")) }
     val nama = remember { mutableStateOf(TextFieldValue("")) }
     val berat = remember { mutableStateOf(TextFieldValue("")) }
+    val isLoading = remember { mutableStateOf(false) }
+    val buttonLabel = if (isLoading.value) "Mohon tunggu..." else "Simpan"
     Column(modifier = Modifier
         .padding(10.dp)
         .fillMaxWidth()) {
@@ -71,20 +80,26 @@ fun FormPencatatanSampah(setoranSampahDao: SetoranSampahDao) {
             backgroundColor = Teal200,
             contentColor = Purple700
         )
-        Row (modifier = Modifier.padding(4.dp).fillMaxWidth()) {
+
+        Row (modifier = Modifier
+            .padding(4.dp)
+            .fillMaxWidth()) {
             Button(modifier = Modifier.weight(5f), onClick = {
-                val id = uuid4().toString()
-                val item = SetoranSampah(id, tanggal.value.text, nama.value.text,
-                    berat.value.text)
-                scope.launch {
-                    setoranSampahDao.insertAll(item)
+                if (id == null) {
+                    scope.launch {
+                        viewModel.insert(tanggal.value.text,
+                            nama.value.text, berat.value.text)
+                    }
+                } else {
+                    scope.launch {
+                        viewModel.update(id, tanggal.value.text,
+                            nama.value.text, berat.value.text)
+                    }
                 }
-                tanggal.value = TextFieldValue("")
-                nama.value = TextFieldValue("")
-                berat.value = TextFieldValue("")
+                navController.navigate("pengelolaan-sampah")
             }, colors = loginButtonColors) {
                 Text(
-                    text = "Simpan",
+                    text = buttonLabel,
                     style = TextStyle(
                         color = Color.White,
                         fontSize = 18.sp
@@ -103,6 +118,22 @@ fun FormPencatatanSampah(setoranSampahDao: SetoranSampahDao) {
                         fontSize = 18.sp
                     ), modifier = Modifier.padding(8.dp)
                 )
+            }
+        }
+    }
+    viewModel.isLoading.observe(LocalLifecycleOwner.current) {
+        isLoading.value = it
+    }
+    if (id != null) {
+        LaunchedEffect(scope) {
+            viewModel.loadItem(id) { setoranSampah ->
+                setoranSampah?.let {
+                    tanggal.value =
+                        TextFieldValue(setoranSampah.tanggal)
+                    nama.value =
+                        TextFieldValue(setoranSampah.nama)
+                    berat.value = TextFieldValue(setoranSampah.berat)
+                }
             }
         }
     }

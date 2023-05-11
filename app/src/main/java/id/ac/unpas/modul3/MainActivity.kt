@@ -23,7 +23,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import id.ac.unpas.modul3.ui.theme.Modul3Theme
 import androidx.compose.ui.unit.dp
 import id.ac.unpas.modul3.screens.PengelolaanSampahScreen
+import dagger.hilt.android.AndroidEntryPoint
+import id.ac.unpas.modul3.screens.MainScreen
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,7 +37,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colors.background
                 ) {
-                    PengelolaanSampahScreen()
+                    MainScreen()
                 }
             }
         }
@@ -78,6 +81,6 @@ fun DefaultPreview() {
     Modul3Theme {
 //        Greeting("Android")
 //        FormLogin()
-        PengelolaanSampahScreen()
+        MainScreen()
     }
 }
